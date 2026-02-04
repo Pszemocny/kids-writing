@@ -344,6 +344,13 @@
                 <button class="btn btn-primary" id="clearBtn">🗑 Wyczyść</button>
                 <button class="btn btn-primary" id="gameBtn">🎮 Gra</button>
                 <label>
+                    Język:
+                    <select id="languageSelect">
+                        <option value="pl">Polski</option>
+                        <option value="en">English</option>
+                    </select>
+                </label>
+                <label>
                     Prędkość:
                     <input type="range" id="speedRange" min="0.5" max="2" step="0.1" value="1">
                     <span id="speedValue">1.0</span>
@@ -448,6 +455,7 @@
                 this.volumeValue = document.getElementById('volumeValue');
                 this.speedRange = document.getElementById('speedRange');
                 this.speedValue = document.getElementById('speedValue');
+                this.languageSelect = document.getElementById('languageSelect');
                 this.keyboard = document.getElementById('keyboard');
                 this.colorPalettes = document.getElementById('colorPalettes');
 
@@ -463,7 +471,50 @@
                 this.currentTypedLength = 0;
                 this.gameTimer = null;
                 this.spellingComplete = false;
-                this.polishWords = ['kot', 'pies', 'dom', 'mama', 'tata', 'auto', 'książka', 'szkoła', 'dziecko', 'zabawa', 'słońce', 'kwiat', 'woda', 'jedzenie', 'przyjaciel', 'rana', 'noc', 'sen', 'gra', 'las', 'morze', 'góra', 'rzeka', 'oko', 'nos', 'ręka', 'noga', 'serce', 'głowa', 'usta'];
+
+                // Słowa do gry
+                this.wordsByLanguage = {
+                    'pl': ['kot', 'pies', 'dom', 'mama', 'tata', 'auto', 'książka', 'szkoła', 'dziecko', 'zabawa', 'słońce', 'kwiat', 'woda', 'jedzenie', 'przyjaciel', 'rana', 'noc', 'sen', 'gra', 'las', 'morze', 'góra', 'rzeka', 'oko', 'nos', 'ręka', 'noga', 'serce', 'głowa', 'usta'],
+                    'en': ['cat', 'dog', 'house', 'mom', 'dad', 'car', 'book', 'school', 'child', 'play', 'sun', 'flower', 'water', 'food', 'friend', 'morning', 'night', 'dream', 'game', 'forest', 'sea', 'mountain', 'river', 'eye', 'nose', 'hand', 'leg', 'heart', 'head', 'mouth']
+                };
+
+                // Tłumaczenia interfejsu
+                this.translations = {
+                    'pl': {
+                        readText: '▶ Odczytaj tekst',
+                        stop: '⏹ Stop',
+                        clear: '🗑 Wyczyść',
+                        game: '🎮 Gra',
+                        endGame: '🚫 Koniec gry',
+                        speed: 'Prędkość:',
+                        language: 'Język:',
+                        volume: 'Głośność:',
+                        newWord: 'Nowe słowo',
+                        exitGame: 'Wyjść z gry',
+                        typeWord: 'Przepisz słowo:',
+                        placeholder: 'Zacznij pisać... Litery będą czytane na bieżąco, a słowa po zakończeniu pisania.',
+                        colorPalette: 'Wybierz paletę kolorów',
+                        congrats: 'Brawo! Następne słowo.',
+                        shades: 'Odcienie'
+                    },
+                    'en': {
+                        readText: '▶ Read text',
+                        stop: '⏹ Stop',
+                        clear: '🗑 Clear',
+                        game: '🎮 Game',
+                        endGame: '🚫 End game',
+                        speed: 'Speed:',
+                        language: 'Language:',
+                        volume: 'Volume:',
+                        newWord: 'New word',
+                        exitGame: 'Exit game',
+                        typeWord: 'Type the word:',
+                        placeholder: 'Start typing... Letters will be read aloud, and words after you finish typing.',
+                        colorPalette: 'Choose color palette',
+                        congrats: 'Great! Next word.',
+                        shades: 'Shades'
+                    }
+                };
 
                 console.log('🎤 Sprawdzanie dostępności Speech Synthesis API:', !!this.synth);
                 this.checkVoices();
@@ -513,6 +564,88 @@
                 } else if (voices.length === 0) {
                     console.error('❌ Brak jakichkolwiek głosów w systemie!');
                 }
+
+                // Wypełnij listę języków
+                this.populateLanguageSelect(voices);
+            }
+
+            populateLanguageSelect(voices) {
+                // Tylko polski i angielski
+                const supportedLanguages = [
+                    { code: 'pl', name: 'Polski' },
+                    { code: 'en', name: 'English' }
+                ];
+
+                // Wyczyść i wypełnij select
+                this.languageSelect.innerHTML = '';
+
+                supportedLanguages.forEach(lang => {
+                    const hasVoice = voices.some(v => v.lang.startsWith(lang.code));
+                    const option = document.createElement('option');
+                    option.value = lang.code;
+                    option.textContent = lang.name;
+                    if (!hasVoice) {
+                        option.textContent += ' (brak głosu)';
+                    }
+                    this.languageSelect.appendChild(option);
+                });
+
+                // Przywróć zapisany wybór
+                const savedLang = localStorage.getItem('selectedLanguage');
+                if (savedLang && (savedLang === 'pl' || savedLang === 'en')) {
+                    this.languageSelect.value = savedLang;
+                } else {
+                    this.languageSelect.value = 'pl';
+                }
+
+                console.log('🌍 Język:', this.languageSelect.value);
+
+                // Zaktualizuj UI do wybranego języka
+                const currentLang = this.languageSelect.value;
+                this.updateUILanguage(currentLang);
+            }
+
+            updateUILanguage(lang) {
+                const t = this.translations[lang] || this.translations['en'] || this.translations['pl'];
+
+                // Aktualizuj przyciski i etykiety
+                this.playBtn.textContent = t.readText;
+                this.stopBtn.textContent = t.stop;
+                this.clearBtn.textContent = t.clear;
+                this.gameBtn.textContent = this.gameMode ? t.endGame : t.game;
+                this.textInput.placeholder = t.placeholder;
+
+                // Aktualizuj etykiety
+                document.querySelector('.text-controls label:nth-of-type(1)').childNodes[0].textContent = t.language + ' ';
+                document.querySelector('.text-controls label:nth-of-type(2)').childNodes[0].textContent = t.speed + ' ';
+
+                // Aktualizuj sekcję kolorów
+                document.querySelector('.color-section h3').textContent = t.colorPalette;
+
+                // Aktualizuj sekcję gry
+                document.querySelector('.game-word-display h3').textContent = t.typeWord;
+                this.nextWordBtn.textContent = t.newWord;
+                this.exitGameBtn.textContent = t.exitGame;
+                document.querySelector('.volume-control').childNodes[0].textContent = t.volume + ' ';
+
+                // Aktualizuj paletę odcieni
+                const shadesPalette = document.querySelector('.saturation-palette .palette-name');
+                if (shadesPalette) {
+                    shadesPalette.textContent = t.shades;
+                }
+
+                console.log('🌍 UI zaktualizowane do języka:', lang);
+            }
+
+            getTranslation(key) {
+                const lang = this.languageSelect.value;
+                const t = this.translations[lang] || this.translations['en'] || this.translations['pl'];
+                return t[key] || key;
+            }
+
+            getCurrentWords() {
+                const lang = this.languageSelect.value;
+                return this.wordsByLanguage[lang] || this.wordsByLanguage['en'] || this.wordsByLanguage['pl'];
             }
 
             setupEventListeners() {
@@ -539,6 +672,14 @@
                 // Speed control
                 this.speedRange.addEventListener('input', (e) => {
                     this.speedValue.textContent = e.target.value;
+                });
+
+                // Language control
+                this.languageSelect.addEventListener('change', (e) => {
+                    const lang = e.target.value;
+                    localStorage.setItem('selectedLanguage', lang);
+                    this.updateUILanguage(lang);
+                    console.log('🌍 Zmieniono język na:', lang);
                 });
 
                 // Virtual keyboard
@@ -658,7 +799,7 @@
 
                     // Przeczytaj gratulacje
                     setTimeout(() => {
-                        this.performSpeak('Brawo! Następne słowo.');
+                        this.performSpeak(this.getTranslation('congrats'));
                         setTimeout(() => {
                             this.nextWord();
                         }, 2000);
@@ -721,16 +862,17 @@
             performSpeak(text) {
                 const utterance = new SpeechSynthesisUtterance(text);
                 const voices = this.synth.getVoices();
+                const selectedLang = this.languageSelect.value;
 
-                // Znajdź polski głos lub użyj domyślnego
-                const polishVoice = voices.find(voice => voice.lang.startsWith('pl'));
-                if (polishVoice) {
-                    utterance.voice = polishVoice;
-                    utterance.lang = polishVoice.lang;
-                    console.log('🇵🇱 Używam polskiego głosu:', polishVoice.name);
+                // Znajdź głos dla wybranego języka
+                const matchingVoice = voices.find(voice => voice.lang.startsWith(selectedLang));
+                if (matchingVoice) {
+                    utterance.voice = matchingVoice;
+                    utterance.lang = matchingVoice.lang;
+                    console.log('🌍 Używam głosu:', matchingVoice.name, '(' + matchingVoice.lang + ')');
                 } else {
-                    utterance.lang = 'pl-PL'; // Fallback
-                    console.log('🌍 Używam domyślnego głosu z lang=pl-PL');
+                    utterance.lang = selectedLang;
+                    console.log('🌍 Używam domyślnego głosu z lang=' + selectedLang);
                 }
 
                 utterance.rate = parseFloat(this.speedRange.value);
@@ -806,7 +948,7 @@
             startGame() {
                 console.log('🎮 Rozpoczynam grę');
                 this.gameMode = true;
-                this.gameBtn.textContent = '🚫 Koniec gry';
+                this.gameBtn.textContent = this.getTranslation('endGame');
                 this.gameSection.style.display = 'block';
                 this.textSection.style.display = 'none';
 
@@ -825,7 +967,7 @@
             exitGame() {
                 console.log('🚫 Kończę grę');
                 this.gameMode = false;
-                this.gameBtn.textContent = '🎮 Gra';
+                this.gameBtn.textContent = this.getTranslation('game');
                 this.gameSection.style.display = 'none';
                 this.textSection.style.display = 'block';
 
@@ -843,8 +985,9 @@
             }
 
             nextWord() {
-                // Wybierz losowe słowo
-                this.currentWord = this.polishWords[Math.floor(Math.random() * this.polishWords.length)];
+                // Wybierz losowe słowo z aktualnego języka
+                const words = this.getCurrentWords();
+                this.currentWord = words[Math.floor(Math.random() * words.length)];
                 this.currentTypedLength = 0;
                 this.spellingComplete = false;
 
