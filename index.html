@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikacja Text-to-Speech z Kolorami</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            gap: 20px;
+        }
+
+        /* Sekcja tekstowa */
+        .text-section {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .text-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            font-size: 24px;
+            line-height: 1.5;
+            resize: none;
+            background: transparent;
+            color: #333;
+            font-family: inherit;
+        }
+
+        .text-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        /* Sekcja kolorów */
+        .color-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-section h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .color-palettes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .palette {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .palette:hover {
+            transform: translateY(-5px);
+        }
+
+        .palette-name {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .palette-colors {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .color-dot:hover {
+            transform: scale(1.2);
+            border-color: #333;
+        }
+
+        .color-dot.selected {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+
+        /* Sekcja klawiatury */
+        .keyboard-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .keyboard {
+            display: grid;
+            gap: 5px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .key {
+            min-width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #f0f0f0, #d0d0d0);
+            box-shadow: 3px 3px 6px #bebebe, -3px -3px 6px #ffffff;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .key:hover {
+            background: linear-gradient(145deg, #e0e0e0, #c0c0c0);
+        }
+
+        .key:active {
+            box-shadow: inset 2px 2px 4px #bebebe, inset -2px -2px 4px #ffffff;
+            transform: translateY(1px);
+        }
+
+        .key.space {
+            min-width: 200px;
+        }
+
+        .key.special {
+            min-width: 70px;
+            font-size: 12px;
+        }
+
+        /* Sekcja gry */
+        .game-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .game-word-display h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .target-word {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 3px solid #dee2e6;
+            letter-spacing: 8px;
+        }
+
+        .game-progress {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            letter-spacing: 6px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .typed-letters {
+            color: #28a745;
+        }
+
+        .typed-letters.error {
+            color: #dc3545;
+        }
+
+        .remaining-letters {
+            color: #6c757d;
+        }
+
+        .game-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .volume-control input[type="range"] {
+            width: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                gap: 15px;
+            }
+
+            .text-input {
+                font-size: 18px;
+            }
+
+            .color-palettes {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .key {
+                min-width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+
+            .key.space {
+                min-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sekcja gry -->
+        <div class="game-section" id="gameSection" style="display: none;">
+            <div class="game-word-display">
+                <h3>Przepisz słowo:</h3>
+                <div class="target-word" id="targetWord">kot</div>
+                <div class="game-progress" id="gameProgress">
+                    <span class="typed-letters" id="typedLetters"></span>
+                    <span class="remaining-letters" id="remainingLetters">kot</span>
+                </div>
+                <div class="game-controls">
+                    <button class="btn btn-secondary" id="nextWordBtn">Nowe słowo</button>
+                    <button class="btn btn-secondary" id="exitGameBtn">Wyjść z gry</button>
+                    <label class="volume-control">
+                        Głośność:
+                        <input type="range" id="volumeRange" min="0" max="1" step="0.1" value="1">
+                        <span id="volumeValue">100%</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sekcja tekstowa -->
+        <div class="text-section" id="textSection">
+            <div class="text-controls">
+                <button class="btn btn-primary" id="playBtn">▶ Odczytaj tekst</button>
+                <button class="btn btn-secondary" id="stopBtn">⏹ Stop</button>
+                <button class="btn btn-primary" id="clearBtn">🗑 Wyczyść</button>
+                <button class="btn btn-primary" id="gameBtn">🎮 Gra</button>
+                <label>
+                    Prędkość:
+                    <input type="range" id="speedRange" min="0.5" max="2" step="0.1" value="1">
+                    <span id="speedValue">1.0</span>
+                </label>
+            </div>
+            <textarea class="text-input" id="textInput" placeholder="Zacznij pisać... Litery będą czytane na bieżąco, a słowa po zakończeniu pisania."></textarea>
+        </div>
+
+        <!-- Sekcja kolorów -->
+        <div class="color-section">
+            <h3>Wybierz paletę kolorów</h3>
+            <div class="color-palettes" id="colorPalettes">
+                <!-- Palety będą generowane przez JavaScript -->
+            </div>
+        </div>
+
+        <!-- Sekcja klawiatury -->
+        <div class="keyboard-section">
+            <div class="keyboard" id="keyboard">
+                <div class="keyboard-row">
+                    <button class="key">1</button>
+                    <button class="key">2</button>
+                    <button class="key">3</button>
+                    <button class="key">4</button>
+                    <button class="key">5</button>
+                    <button class="key">6</button>
+                    <button class="key">7</button>
+                    <button class="key">8</button>
+                    <button class="key">9</button>
+                    <button class="key">0</button>
+                    <button class="key special" data-key="Backspace">⌫</button>
+                </div>
+                <div class="keyboard-row">
+                    <button class="key">q</button>
+                    <button class="key">w</button>
+                    <button class="key">e</button>
+                    <button class="key">r</button>
+                    <button class="key">t</button>
+                    <button class="key">y</button>
+                    <button class="key">u</button>
+                    <button class="key">i</button>
+                    <button class="key">o</button>
+                    <button class="key">p</button>
+                </div>
+                <div class="keyboard-row">
+                    <button class="key">a</button>
+                    <button class="key">s</button>
+                    <button class="key">d</button>
+                    <button class="key">f</button>
+                    <button class="key">g</button>
+                    <button class="key">h</button>
+                    <button class="key">j</button>
+                    <button class="key">k</button>
+                    <button class="key">l</button>
+                    <button class="key">ą</button>
+                </div>
+                <div class="keyboard-row">
+                    <button class="key">z</button>
+                    <button class="key">x</button>
+                    <button class="key">c</button>
+                    <button class="key">v</button>
+                    <button class="key">b</button>
+                    <button class="key">n</button>
+                    <button class="key">m</button>
+                    <button class="key">ę</button>
+                    <button class="key">ć</button>
+                    <button class="key">ń</button>
+                </div>
+                <div class="keyboard-row">
+                    <button class="key">ś</button>
+                    <button class="key">ó</button>
+                    <button class="key">ł</button>
+                    <button class="key">ż</button>
+                    <button class="key">ź</button>
+                    <button class="key space" data-key=" ">Spacja</button>
+                    <button class="key">.</button>
+                    <button class="key">,</button>
+                    <button class="key">!</button>
+                    <button class="key">?</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TextToSpeechApp {
+            constructor() {
+                console.log('🎤 Inicjalizacja aplikacji TTS...');
+                this.textInput = document.getElementById('textInput');
+                this.playBtn = document.getElementById('playBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.gameBtn = document.getElementById('gameBtn');
+                this.gameSection = document.getElementById('gameSection');
+                this.textSection = document.getElementById('textSection');
+                this.targetWord = document.getElementById('targetWord');
+                this.typedLetters = document.getElementById('typedLetters');
+                this.remainingLetters = document.getElementById('remainingLetters');
+                this.nextWordBtn = document.getElementById('nextWordBtn');
+                this.exitGameBtn = document.getElementById('exitGameBtn');
+                this.volumeRange = document.getElementById('volumeRange');
+                this.volumeValue = document.getElementById('volumeValue');
+                this.speedRange = document.getElementById('speedRange');
+                this.speedValue = document.getElementById('speedValue');
+                this.keyboard = document.getElementById('keyboard');
+                this.colorPalettes = document.getElementById('colorPalettes');
+
+                this.synth = window.speechSynthesis;
+                this.currentUtterance = null;
+                this.typingTimer = null;
+                this.speechTimeout = null;
+                this.lastWordSpoken = '';
+
+                // Game state
+                this.gameMode = false;
+                this.currentWord = '';
+                this.currentTypedLength = 0;
+                this.gameTimer = null;
+                this.spellingComplete = false;
+                this.polishWords = ['kot', 'pies', 'dom', 'mama', 'tata', 'auto', 'książka', 'szkoła', 'dziecko', 'zabawa', 'słońce', 'kwiat', 'woda', 'jedzenie', 'przyjaciel', 'rana', 'noc', 'sen', 'gra', 'las', 'morze', 'góra', 'rzeka', 'oko', 'nos', 'ręka', 'noga', 'serce', 'głowa', 'usta'];
+
+                console.log('🎤 Sprawdzanie dostępności Speech Synthesis API:', !!this.synth);
+                this.checkVoices();
+                this.init();
+            }
+
+            init() {
+                console.log('🎤 Uruchamianie aplikacji...');
+                this.setupEventListeners();
+                this.createColorPalettes();
+                this.loadSavedSettings();
+                console.log('✅ Aplikacja gotowa');
+            }
+
+            checkVoices() {
+                const voices = this.synth.getVoices();
+                console.log('🎤 Dostępne głosy:', voices.length);
+
+                if (voices.length === 0) {
+                    console.log('⏳ Głosy jeszcze się ładują, czekam...');
+                    // W Chrome/Brave głosy ładują się asynchronicznie
+                    this.synth.addEventListener('voiceschanged', () => {
+                        this.checkVoicesAgain();
+                    });
+                    return;
+                }
+
+                this.analyzeVoices(voices);
+            }
+
+            checkVoicesAgain() {
+                console.log('🔄 Sprawdzam głosy ponownie...');
+                const voices = this.synth.getVoices();
+                this.analyzeVoices(voices);
+            }
+
+            analyzeVoices(voices) {
+                console.log('🎤 Dostępne głosy:', voices.length);
+                const polishVoices = voices.filter(voice => voice.lang.startsWith('pl'));
+                const anyVoices = voices.length > 0;
+
+                console.log('🇵🇱 Polskie głosy:', polishVoices.length, polishVoices.map(v => v.name));
+                console.log('🌍 Wszystkie głosy:', voices.slice(0, 5).map(v => `${v.name} (${v.lang})`));
+
+                if (polishVoices.length === 0 && anyVoices) {
+                    console.warn('⚠️ Brak polskich głosów! Używam domyślnego głosu.');
+                } else if (voices.length === 0) {
+                    console.error('❌ Brak jakichkolwiek głosów w systemie!');
+                }
+            }
+
+            setupEventListeners() {
+                // Text input events
+                this.textInput.addEventListener('input', (e) => this.handleTextInput(e));
+
+                // Physical keyboard events
+                document.addEventListener('keydown', (e) => this.handlePhysicalKeydown(e));
+
+                // Control buttons
+                this.playBtn.addEventListener('click', () => this.readFullText());
+                this.stopBtn.addEventListener('click', () => this.stopSpeech());
+                this.clearBtn.addEventListener('click', () => this.clearText());
+                this.gameBtn.addEventListener('click', () => this.toggleGame());
+                this.nextWordBtn.addEventListener('click', () => this.nextWord());
+                this.exitGameBtn.addEventListener('click', () => this.exitGame());
+
+                // Volume control
+                this.volumeRange.addEventListener('input', (e) => {
+                    const volume = parseFloat(e.target.value);
+                    this.volumeValue.textContent = Math.round(volume * 100) + '%';
+                });
+
+                // Speed control
+                this.speedRange.addEventListener('input', (e) => {
+                    this.speedValue.textContent = e.target.value;
+                });
+
+                // Virtual keyboard
+                this.keyboard.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('key')) {
+                        this.handleKeyPress(e.target);
+                    }
+                });
+
+                // Color palette selection
+                this.colorPalettes.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('color-dot')) {
+                        this.selectColor(e.target);
+                    }
+                });
+            }
+
+            handleTextInput(e) {
+                const input = e.target;
+                const text = input.value;
+                const lastChar = text.slice(-1);
+
+                console.log('⌨️ Input event:', {
+                    inputType: e.inputType,
+                    lastChar: lastChar,
+                    textLength: text.length,
+                    gameMode: this.gameMode
+                });
+
+                if (this.gameMode) {
+                    this.handleGameInput(text);
+                    return;
+                }
+
+                // Sprawdź czy to nie jest przypadkowe wyczyszczenie przez API
+                if (e.inputType === 'deleteContentBackward' && text.length === 0 && this.synth.speaking) {
+                    console.log('⚠️ API wyczyściło tekst - przywracam...');
+                    return;
+                }
+
+                // Czytaj literę jeśli została dodana
+                if (e.inputType === 'insertText' && lastChar && lastChar !== ' ') {
+                    console.log('🔤 Czytam literę:', lastChar);
+                    this.speakText(lastChar);
+                }
+
+                // Ustaw timer dla słowa
+                clearTimeout(this.typingTimer);
+                this.typingTimer = setTimeout(() => {
+                    console.log('⏰ Timer słowa - sprawdzam kompletne słowo');
+                    this.handleWordComplete(text);
+                }, 1000);
+            }
+
+            handleGameInput(text) {
+                const previousLength = this.currentTypedLength;
+
+                console.log('🎮 Input gry:', {
+                    typed: text,
+                    currentWord: this.currentWord,
+                    newLength: text.length,
+                    previousLength: previousLength
+                });
+
+                // Sprawdź poprawność litera po literze
+                let correctPart = '';
+                let hasError = false;
+
+                for (let i = 0; i < text.length; i++) {
+                    if (i < this.currentWord.length && text[i] === this.currentWord[i]) {
+                        correctPart += text[i];
+                    } else {
+                        hasError = true;
+                        break;
+                    }
+                }
+
+                console.log('🔍 Analiza:', {
+                    correctPart: correctPart,
+                    hasError: hasError,
+                    wrongPart: hasError ? text.substring(correctPart.length) : ''
+                });
+
+                if (hasError) {
+                    // Pokaż błędną część na czerwono
+                    this.typedLetters.innerHTML =
+                        `<span style="color: ${localStorage.getItem('selectedColor') || '#28a745'}">${correctPart}</span>` +
+                        `<span style="color: #dc3545">${text.substring(correctPart.length)}</span>`;
+                    this.typedLetters.classList.add('error');
+
+                    // Nie aktualizuj currentTypedLength przy błędzie
+                } else {
+                    // Wszystkie litery poprawne
+                    const selectedColor = localStorage.getItem('selectedColor') || '#28a745';
+                    this.typedLetters.textContent = text;
+                    this.typedLetters.style.color = selectedColor;
+                    this.typedLetters.classList.remove('error');
+
+                    // Aktualizuj długość tylko przy poprawnym wpisie
+                    this.currentTypedLength = text.length;
+
+                    // Jeśli napisano nową poprawną literę, zrestartuj timer powtarzania
+                    if (this.currentTypedLength > previousLength && this.spellingComplete) {
+                        clearTimeout(this.gameTimer);
+                        this.startRepeatingMissingLetters();
+                    }
+                }
+
+                // Aktualizuj pozostałe litery
+                this.remainingLetters.textContent = this.currentWord.substring(this.currentTypedLength);
+
+                // Sprawdź czy słowo zostało ukończone
+                if (!hasError && text === this.currentWord) {
+                    console.log('✅ Słowo ukończone!');
+                    clearTimeout(this.gameTimer);
+                    this.spellingComplete = false;
+
+                    // Przeczytaj gratulacje
+                    setTimeout(() => {
+                        this.performSpeak('Brawo! Następne słowo.');
+                        setTimeout(() => {
+                            this.nextWord();
+                        }, 2000);
+                    }, 500);
+                }
+            }
+
+            handleWordComplete(text) {
+                const words = text.trim().split(/\s+/);
+                const lastWord = words[words.length - 1];
+
+                console.log('📝 Sprawdzam słowo:', {
+                    lastWord: lastWord,
+                    lastWordSpoken: this.lastWordSpoken,
+                    wordLength: lastWord?.length
+                });
+
+                // Ogranicz długość słowa żeby uniknąć zawieszenia API
+                if (lastWord && lastWord !== this.lastWordSpoken && lastWord.length > 1) {
+                    if (lastWord.length > 15) {
+                        console.log('⚠️ Słowo za długie, skracam do 15 znaków');
+                        const shortWord = lastWord.substring(0, 15);
+                        console.log('📖 Czytam skróconą wersję:', shortWord);
+                        this.speakText(shortWord);
+                    } else {
+                        console.log('📖 Czytam słowo:', lastWord);
+                        this.speakText(lastWord);
+                    }
+                    this.lastWordSpoken = lastWord;
+                } else {
+                    console.log('⏭️ Pomijam słowo (za krótkie lub już czytane)');
+                }
+            }
+
+            speakText(text) {
+                console.log('🎤 Próba czytania:', text);
+
+                if (!this.synth) {
+                    console.error('❌ Speech Synthesis API niedostępne!');
+                    return;
+                }
+
+                const voices = this.synth.getVoices();
+                if (voices.length === 0) {
+                    console.warn('⚠️ Brak głosów - pomijam czytanie');
+                    return;
+                }
+
+                if (this.synth.speaking) {
+                    console.log('⏹️ Przerywam poprzednie czytanie');
+                    this.synth.cancel();
+                    // Krótka pauza po cancel()
+                    setTimeout(() => this.performSpeak(text), 50);
+                    return;
+                }
+
+                this.performSpeak(text);
+            }
+
+            performSpeak(text) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                const voices = this.synth.getVoices();
+
+                // Znajdź polski głos lub użyj domyślnego
+                const polishVoice = voices.find(voice => voice.lang.startsWith('pl'));
+                if (polishVoice) {
+                    utterance.voice = polishVoice;
+                    utterance.lang = polishVoice.lang;
+                    console.log('🇵🇱 Używam polskiego głosu:', polishVoice.name);
+                } else {
+                    utterance.lang = 'pl-PL'; // Fallback
+                    console.log('🌍 Używam domyślnego głosu z lang=pl-PL');
+                }
+
+                utterance.rate = parseFloat(this.speedRange.value);
+                utterance.volume = this.gameMode ? parseFloat(this.volumeRange.value) : 1.0;
+
+                console.log('🎤 Ustawienia utterance:', {
+                    text: utterance.text,
+                    voice: utterance.voice?.name || 'default',
+                    lang: utterance.lang,
+                    rate: utterance.rate,
+                    volume: utterance.volume
+                });
+
+                utterance.onstart = () => {
+                    console.log('▶️ Rozpoczęto czytanie:', text);
+                    // Ustaw timeout - anuluj po 10 sekundach
+                    this.speechTimeout = setTimeout(() => {
+                        console.log('⏰ Timeout - anulowanie długiego czytania');
+                        this.synth.cancel();
+                    }, 10000);
+                };
+
+                utterance.onend = () => {
+                    console.log('✅ Zakończono czytanie:', text);
+                    clearTimeout(this.speechTimeout);
+                };
+
+                utterance.onerror = (event) => {
+                    console.error('❌ Błąd TTS:', event.error, event);
+                    clearTimeout(this.speechTimeout);
+
+                    if (event.error === 'canceled') {
+                        console.log('ℹ️ Czytanie zostało anulowane (normalnie przy szybkim pisaniu)');
+                    } else if (event.error === 'interrupted' || event.error === 'network') {
+                        console.warn('⚠️ API się zacięło, próbuję restart...');
+                        setTimeout(() => {
+                            this.restartSpeechAPI();
+                        }, 500);
+                    }
+                };
+
+                try {
+                    this.synth.speak(utterance);
+                    console.log('🎤 Wywołano synth.speak()');
+                } catch (error) {
+                    console.error('❌ Wyjątek podczas speak():', error);
+                }
+            }
+
+            readFullText() {
+                console.log('📖 Przycisk Odczytaj - zatrzymuję automatyczne czytanie');
+                clearTimeout(this.typingTimer);
+
+                const text = this.textInput.value.trim();
+                if (text) {
+                    console.log('📖 Czytam cały tekst z przycisku:', text);
+                    // Zatrzymaj wszystko i zrób pauzę
+                    this.synth.cancel();
+                    setTimeout(() => {
+                        this.performSpeak(text);
+                    }, 100);
+                }
+            }
+
+            toggleGame() {
+                if (this.gameMode) {
+                    this.exitGame();
+                } else {
+                    this.startGame();
+                }
+            }
+
+            startGame() {
+                console.log('🎮 Rozpoczynam grę');
+                this.gameMode = true;
+                this.gameBtn.textContent = '🚫 Koniec gry';
+                this.gameSection.style.display = 'block';
+                this.textSection.style.display = 'none';
+
+                // Wyłącz automatyczne czytanie
+                clearTimeout(this.typingTimer);
+                this.synth.cancel();
+
+                // Pole tekstowe nadal musi być dostępne dla klawiatury
+                this.textInput.style.opacity = '0';
+                this.textInput.style.position = 'absolute';
+                this.textInput.style.left = '-9999px';
+
+                this.nextWord();
+            }
+
+            exitGame() {
+                console.log('🚫 Kończę grę');
+                this.gameMode = false;
+                this.gameBtn.textContent = '🎮 Gra';
+                this.gameSection.style.display = 'none';
+                this.textSection.style.display = 'block';
+
+                clearTimeout(this.gameTimer);
+                this.synth.cancel();
+
+                // Przywróć pole tekstowe
+                this.textInput.style.opacity = '1';
+                this.textInput.style.position = 'static';
+                this.textInput.style.left = 'auto';
+
+                // Wyczyść pole tekstowe
+                this.textInput.value = '';
+                this.textInput.focus();
+            }
+
+            nextWord() {
+                // Wybierz losowe słowo
+                this.currentWord = this.polishWords[Math.floor(Math.random() * this.polishWords.length)];
+                this.currentTypedLength = 0;
+                this.spellingComplete = false;
+
+                console.log('🎯 Nowe słowo:', this.currentWord);
+
+                // Zaktualizuj wyświetlanie
+                this.targetWord.textContent = this.currentWord;
+                this.typedLetters.textContent = '';
+                this.remainingLetters.textContent = this.currentWord;
+                this.typedLetters.classList.remove('error');
+
+                // Wyczyść pole tekstowe
+                this.textInput.value = '';
+                this.textInput.focus();
+
+                // Zatrzymaj poprzedni timer
+                clearTimeout(this.gameTimer);
+                this.synth.cancel();
+
+                // Sekwencja: słowo -> literowanie -> powtarzanie
+                setTimeout(() => {
+                    console.log('📖 Czytam słowo:', this.currentWord);
+                    this.performSpeak(this.currentWord);
+
+                    setTimeout(() => {
+                        this.spellWordCompletely();
+                    }, 1500);
+                }, 100);
+            }
+
+            spellWordCompletely() {
+                if (!this.gameMode) return;
+
+                console.log('🔤 Literuję całe słowo bez przerw');
+
+                // Utwórz string z literami oddzielonymi spacjami
+                const spellString = this.currentWord.split('').join(' ');
+
+                this.synth.cancel();
+                setTimeout(() => {
+                    this.performSpeak(spellString);
+
+                    // Po przeliterowaniu zacznij powtarzać nienapisane litery
+                    setTimeout(() => {
+                        this.spellingComplete = true;
+                        this.startRepeatingMissingLetters();
+                    }, 2000);
+                }, 100);
+            }
+
+            startRepeatingMissingLetters() {
+                if (!this.gameMode || !this.spellingComplete) return;
+
+                if (this.currentTypedLength < this.currentWord.length) {
+                    const nextLetter = this.currentWord[this.currentTypedLength];
+                    console.log('🔁 Powtarzam literę:', nextLetter);
+
+                    this.performSpeak(nextLetter);
+
+                    // Powtarzaj co 2 sekundy
+                    this.gameTimer = setTimeout(() => {
+                        this.startRepeatingMissingLetters();
+                    }, 2000);
+                }
+            }
+
+            stopSpeech() {
+                console.log('⏹️ Zatrzymywanie mowy');
+                clearTimeout(this.speechTimeout);
+                this.synth.cancel();
+            }
+
+            restartSpeechAPI() {
+                console.log('🔄 Restart Speech API...');
+
+                try {
+                    // Forś anulowanie wszystkiego
+                    this.synth.cancel();
+
+                    // Wyczyść kolejkę (hack dla Chrome/Brave)
+                    this.synth.speak(new SpeechSynthesisUtterance(''));
+                    this.synth.cancel();
+
+                    // Krótka pauza przed sprawdzeniem
+                    setTimeout(() => {
+                        console.log('✅ Speech API zrestartowane');
+                        this.checkVoicesAgain();
+                    }, 200);
+
+                } catch (error) {
+                    console.error('❌ Błąd podczas restartu API:', error);
+                }
+            }
+
+            clearText() {
+                console.log('🗑️ Czyszczenie tekstu i restart API');
+
+                // Wyczyść tekst
+                this.textInput.value = '';
+                this.lastWordSpoken = '';
+
+                // Zatrzymaj wszystkie timery
+                clearTimeout(this.typingTimer);
+                clearTimeout(this.speechTimeout);
+
+                // Restart Speech API
+                this.restartSpeechAPI();
+
+                this.textInput.focus();
+            }
+
+            handlePhysicalKeydown(e) {
+                console.log('⌨️ Fizyczny klawisz:', e.key, e.code);
+
+                // Mapowanie polskich znaków (AltGr + klawisz)
+                const polishKeyMap = {
+                    'ą': 'ą', 'Ą': 'Ą',
+                    'ć': 'ć', 'Ć': 'Ć',
+                    'ę': 'ę', 'Ę': 'Ę',
+                    'ł': 'ł', 'Ł': 'Ł',
+                    'ń': 'ń', 'Ń': 'Ń',
+                    'ó': 'ó', 'Ó': 'Ó',
+                    'ś': 'ś', 'Ś': 'Ś',
+                    'ź': 'ź', 'Ź': 'Ź',
+                    'ż': 'ż', 'Ż': 'Ż'
+                };
+
+                // Sprawdź czy to znak polski
+                let keyToInsert = polishKeyMap[e.key] || e.key;
+
+                // Obsługa podstawowych klawiszy
+                if (e.key === 'Backspace') {
+                    e.preventDefault();
+                    this.handleBackspace();
+                } else if (e.key === ' ' || e.key === 'Spacebar') {
+                    e.preventDefault();
+                    this.insertTextAtCursor(' ');
+                    this.triggerInputEvent();
+                } else if (e.key.length === 1) {
+                    // Pojedynczy znak (litera, cyfra, interpunkcja)
+                    e.preventDefault();
+                    this.insertTextAtCursor(keyToInsert);
+
+                    if (keyToInsert !== ' ') {
+                        console.log('⌨️ Czytam klawisz:', keyToInsert);
+                        this.speakText(keyToInsert);
+                    }
+
+                    this.triggerInputEvent();
+                }
+            }
+
+            handleBackspace() {
+                const input = this.textInput;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+
+                if (start === end && start > 0) {
+                    input.value = input.value.slice(0, start - 1) + input.value.slice(start);
+                    input.setSelectionRange(start - 1, start - 1);
+                    this.triggerInputEvent();
+                }
+            }
+
+            triggerInputEvent() {
+                this.textInput.focus();
+                this.textInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            handleKeyPress(keyElement) {
+                const key = keyElement.dataset.key || keyElement.textContent;
+                const input = this.textInput;
+
+                console.log('🎹 Kliknięto klawisz:', key);
+
+                if (key === 'Backspace' || keyElement.textContent === '⌫') {
+                    this.handleBackspace();
+                } else if (key === ' ' || keyElement.textContent === 'Spacja') {
+                    this.insertTextAtCursor(' ');
+                } else {
+                    this.insertTextAtCursor(key);
+                    if (key !== ' ') {
+                        console.log('🎹 Czytam klawisz:', key);
+                        this.speakText(key);
+                    }
+                }
+
+                this.triggerInputEvent();
+            }
+
+            insertTextAtCursor(text) {
+                const input = this.textInput;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+
+                input.value = input.value.slice(0, start) + text + input.value.slice(end);
+                input.setSelectionRange(start + text.length, start + text.length);
+            }
+
+            createColorPalettes() {
+                const basePalettes = [
+                    {
+                        name: 'Adobe Red',
+                        colors: ['#FF0000', '#CC0000', '#990000', '#660000', '#FF6666']
+                    },
+                    {
+                        name: 'Creative Blue',
+                        colors: ['#0066CC', '#004499', '#002266', '#6699FF', '#99CCFF']
+                    },
+                    {
+                        name: 'Illustrator Purple',
+                        colors: ['#6600CC', '#4D0099', '#330066', '#9966FF', '#CC99FF']
+                    },
+                    {
+                        name: 'Photoshop Cyan',
+                        colors: ['#00CCFF', '#0099CC', '#006699', '#66DDFF', '#99EEFF']
+                    },
+                    {
+                        name: 'InDesign Magenta',
+                        colors: ['#FF0099', '#CC0066', '#990033', '#FF66CC', '#FF99DD']
+                    },
+                    {
+                        name: 'After Effects Orange',
+                        colors: ['#FF6600', '#CC3300', '#993300', '#FF9966', '#FFCC99']
+                    },
+                    {
+                        name: 'Premiere Green',
+                        colors: ['#00CC66', '#009933', '#006600', '#66FF99', '#99FFCC']
+                    },
+                    {
+                        name: 'XD Pink',
+                        colors: ['#FF3399', '#CC0066', '#990033', '#FF99CC', '#FFCCDD']
+                    }
+                ];
+
+                // Wyczyść poprzednie palety
+                this.colorPalettes.innerHTML = '';
+
+                // Zawsze dodaj domyślną paletę odcieni jako pierwszą
+                const defaultSaturationPalette = this.createDefaultSaturationPalette();
+                this.renderPalette(defaultSaturationPalette, true);
+
+                // Dodaj pozostałe palety
+                const palettes = basePalettes;
+
+                palettes.forEach(palette => {
+                    this.renderPalette(palette, false);
+                });
+            }
+
+            renderPalette(palette, isSaturationPalette = false) {
+                const paletteDiv = document.createElement('div');
+                paletteDiv.className = 'palette';
+                if (isSaturationPalette) {
+                    paletteDiv.classList.add('saturation-palette');
+                }
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'palette-name';
+                nameDiv.textContent = palette.name;
+
+                const colorsDiv = document.createElement('div');
+                colorsDiv.className = 'palette-colors';
+
+                palette.colors.forEach(color => {
+                    const colorDot = document.createElement('div');
+                    colorDot.className = 'color-dot';
+                    colorDot.style.backgroundColor = color;
+                    colorDot.dataset.color = color;
+                    if (isSaturationPalette) {
+                        colorDot.classList.add('saturation-color');
+                    }
+                    colorsDiv.appendChild(colorDot);
+                });
+
+                paletteDiv.appendChild(nameDiv);
+                paletteDiv.appendChild(colorsDiv);
+                this.colorPalettes.appendChild(paletteDiv);
+            }
+
+            selectColor(colorDot) {
+                // Usuń poprzednie zaznaczenia
+                document.querySelectorAll('.color-dot.selected').forEach(dot => {
+                    dot.classList.remove('selected');
+                });
+
+                // Zaznacz wybrany kolor
+                colorDot.classList.add('selected');
+
+                // Zastosuj kolor do tła aplikacji
+                const color = colorDot.dataset.color;
+                this.applyColorTheme(color);
+
+                // Jeśli to nie jest kolor z palety odcieni, zaktualizuj paletę odcieni
+                if (!colorDot.classList.contains('saturation-color')) {
+                    this.updateSaturationPalette(color);
+                }
+
+                // Zapisz wybór
+                localStorage.setItem('selectedColor', color);
+            }
+
+            updateSaturationPalette(baseColor) {
+                // Znajdź istniejącą paletę odcieni
+                const existingSaturationPalette = document.querySelector('.saturation-palette');
+                if (existingSaturationPalette) {
+                    // Zaktualizuj kolory w istniejącej palecie
+                    const saturationPalette = this.createSaturationPalette(baseColor);
+                    if (saturationPalette) {
+                        const colorDots = existingSaturationPalette.querySelectorAll('.color-dot');
+                        saturationPalette.colors.forEach((color, index) => {
+                            if (colorDots[index]) {
+                                colorDots[index].style.backgroundColor = color;
+                                colorDots[index].dataset.color = color;
+                            }
+                        });
+                    }
+                }
+            }
+
+            renderPaletteAtBeginning(palette, isSaturationPalette = false) {
+                const paletteDiv = document.createElement('div');
+                paletteDiv.className = 'palette';
+                if (isSaturationPalette) {
+                    paletteDiv.classList.add('saturation-palette');
+                }
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'palette-name';
+                nameDiv.textContent = palette.name;
+
+                const colorsDiv = document.createElement('div');
+                colorsDiv.className = 'palette-colors';
+
+                palette.colors.forEach(color => {
+                    const colorDot = document.createElement('div');
+                    colorDot.className = 'color-dot';
+                    colorDot.style.backgroundColor = color;
+                    colorDot.dataset.color = color;
+                    if (isSaturationPalette) {
+                        colorDot.classList.add('saturation-color');
+                    }
+                    colorsDiv.appendChild(colorDot);
+                });
+
+                paletteDiv.appendChild(nameDiv);
+                paletteDiv.appendChild(colorsDiv);
+
+                // Dodaj na początku
+                this.colorPalettes.insertBefore(paletteDiv, this.colorPalettes.firstChild);
+            }
+
+            applyColorTheme(color) {
+                const textInput = document.getElementById('textInput');
+                textInput.style.color = color;
+            }
+
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            createDefaultSaturationPalette() {
+                // Domyślna paleta - skala szarości od jasnego do ciemnego
+                return {
+                    name: 'Odcienie',
+                    colors: ['#D3D3D3', '#A9A9A9', '#808080', '#555555', '#2C2C2C']
+                };
+            }
+
+            createSaturationPalette(baseColor) {
+                // Konwertuj hex na HSL
+                const hsl = this.hexToHsl(baseColor);
+                if (!hsl) return null;
+
+                // Generuj paletę od jasnego do ciemnego z pełnym nasyceniem
+                const lightnesses = [85, 70, 55, 40, 25]; // Od jasnego do ciemnego
+                const colors = lightnesses.map(lightness =>
+                    this.hslToHex(hsl.h, 90, lightness) // Wysokie nasycenie (90%)
+                );
+
+                return {
+                    name: 'Odcienie',
+                    colors: colors
+                };
+            }
+
+            hexToHsl(hex) {
+                const r = parseInt(hex.slice(1, 3), 16) / 255;
+                const g = parseInt(hex.slice(3, 5), 16) / 255;
+                const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+
+                if (max === min) {
+                    h = s = 0;
+                } else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                        case g: h = (b - r) / d + 2; break;
+                        case b: h = (r - g) / d + 4; break;
+                    }
+                    h /= 6;
+                }
+
+                return { h: h * 360, s: s * 100, l: l * 100 };
+            }
+
+            hslToHex(h, s, l) {
+                l /= 100;
+                const a = s * Math.min(l, 1 - l) / 100;
+                const f = n => {
+                    const k = (n + h / 30) % 12;
+                    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                    return Math.round(255 * color).toString(16).padStart(2, '0');
+                };
+                return `#${f(0)}${f(8)}${f(4)}`;
+            }
+
+            loadSavedSettings() {
+                const savedColor = localStorage.getItem('selectedColor');
+                if (savedColor) {
+                    const colorDot = document.querySelector(`[data-color="${savedColor}"]`);
+                    if (colorDot) {
+                        this.selectColor(colorDot);
+                    }
+                }
+
+                const savedSpeed = localStorage.getItem('speechSpeed');
+                if (savedSpeed) {
+                    this.speedRange.value = savedSpeed;
+                    this.speedValue.textContent = savedSpeed;
+                }
+            }
+        }
+
+        // Inicjalizuj aplikację po załadowaniu strony
+        document.addEventListener('DOMContentLoaded', () => {
+            new TextToSpeechApp();
+        });
+    </script>
+</body>
+</html>
