@@ -736,75 +736,80 @@
 
             handleGameInput(text) {
                 const previousLength = this.currentTypedLength;
+                const expectedLetter = this.currentWord[this.currentTypedLength];
 
                 console.log('🎮 Input gry:', {
                     typed: text,
                     currentWord: this.currentWord,
-                    newLength: text.length,
-                    previousLength: previousLength
+                    expectedLetter: expectedLetter,
+                    currentTypedLength: this.currentTypedLength
                 });
 
-                // Sprawdź poprawność litera po literze
-                let correctPart = '';
-                let hasError = false;
+                // Sprawdź tylko ostatnią wpisaną literę
+                const lastTypedLetter = text.slice(-1);
 
-                for (let i = 0; i < text.length; i++) {
-                    if (i < this.currentWord.length && text[i] === this.currentWord[i]) {
-                        correctPart += text[i];
-                    } else {
-                        hasError = true;
-                        break;
-                    }
-                }
-
-                console.log('🔍 Analiza:', {
-                    correctPart: correctPart,
-                    hasError: hasError,
-                    wrongPart: hasError ? text.substring(correctPart.length) : ''
-                });
-
-                if (hasError) {
-                    // Pokaż błędną część na czerwono
-                    this.typedLetters.innerHTML =
-                        `<span style="color: ${localStorage.getItem('selectedColor') || '#28a745'}">${correctPart}</span>` +
-                        `<span style="color: #dc3545">${text.substring(correctPart.length)}</span>`;
-                    this.typedLetters.classList.add('error');
-
-                    // Nie aktualizuj currentTypedLength przy błędzie
-                } else {
-                    // Wszystkie litery poprawne
-                    const selectedColor = localStorage.getItem('selectedColor') || '#28a745';
-                    this.typedLetters.textContent = text;
-                    this.typedLetters.style.color = selectedColor;
-                    this.typedLetters.classList.remove('error');
-
-                    // Aktualizuj długość tylko przy poprawnym wpisie
+                // Jeśli użytkownik kasuje - pozwól
+                if (text.length < this.currentTypedLength) {
                     this.currentTypedLength = text.length;
+                    const correctPart = this.currentWord.substring(0, this.currentTypedLength);
+                    this.textInput.value = correctPart;
+                    this.updateGameDisplay(correctPart);
+                    return;
+                }
 
-                    // Jeśli napisano nową poprawną literę, zrestartuj timer powtarzania
-                    if (this.currentTypedLength > previousLength && this.spellingComplete) {
-                        clearTimeout(this.gameTimer);
-                        this.startRepeatingMissingLetters();
+                // Sprawdź czy nowa litera jest poprawna
+                if (text.length > this.currentTypedLength) {
+                    const newLetter = text[this.currentTypedLength];
+
+                    if (newLetter === expectedLetter) {
+                        // Poprawna litera!
+                        this.currentTypedLength++;
+                        const correctPart = this.currentWord.substring(0, this.currentTypedLength);
+                        this.textInput.value = correctPart;
+                        this.updateGameDisplay(correctPart);
+
+                        console.log('✅ Poprawna litera:', newLetter);
+
+                        // Zrestartuj timer powtarzania
+                        if (this.spellingComplete) {
+                            clearTimeout(this.gameTimer);
+                            this.startRepeatingMissingLetters();
+                        }
+
+                        // Sprawdź czy słowo ukończone
+                        if (this.currentTypedLength === this.currentWord.length) {
+                            console.log('🎉 Słowo ukończone!');
+                            clearTimeout(this.gameTimer);
+                            this.spellingComplete = false;
+
+                            setTimeout(() => {
+                                this.performSpeak(this.getTranslation('congrats'));
+                                setTimeout(() => {
+                                    this.nextWord();
+                                }, 2000);
+                            }, 500);
+                        }
+                    } else {
+                        // Zła litera - ignoruj, przywróć poprzedni stan
+                        console.log('❌ Zła litera:', newLetter, '(oczekiwano:', expectedLetter + ')');
+                        const correctPart = this.currentWord.substring(0, this.currentTypedLength);
+                        this.textInput.value = correctPart;
+
+                        // Krótkie mignięcie na czerwono
+                        this.typedLetters.style.color = '#dc3545';
+                        setTimeout(() => {
+                            this.updateGameDisplay(correctPart);
+                        }, 150);
                     }
                 }
+            }
 
-                // Aktualizuj pozostałe litery
+            updateGameDisplay(correctPart) {
+                const selectedColor = localStorage.getItem('selectedColor') || '#28a745';
+                this.typedLetters.textContent = correctPart;
+                this.typedLetters.style.color = selectedColor;
+                this.typedLetters.classList.remove('error');
                 this.remainingLetters.textContent = this.currentWord.substring(this.currentTypedLength);
-
-                // Sprawdź czy słowo zostało ukończone
-                if (!hasError && text === this.currentWord) {
-                    console.log('✅ Słowo ukończone!');
-                    clearTimeout(this.gameTimer);
-                    this.spellingComplete = false;
-
-                    // Przeczytaj gratulacje
-                    setTimeout(() => {
-                        this.performSpeak(this.getTranslation('congrats'));
-                        setTimeout(() => {
-                            this.nextWord();
-                        }, 2000);
-                    }, 500);
-                }
             }
 
             handleWordComplete(text) {
